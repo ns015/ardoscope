@@ -1,7 +1,7 @@
 QT += widgets serialport
 requires(qtConfig(combobox))
 
-TARGET = arduscope
+TARGET = ardoscope
 TEMPLATE = app
 
 CONFIG += c++11
