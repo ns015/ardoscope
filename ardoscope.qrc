@@ -1,0 +1,15 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/connect.png</file>
+        <file>images/disconnect.png</file>
+        <file>images/application-exit.png</file>
+        <file>images/settings.png</file>
+        <file>images/runtime-settings.png</file>
+        <file>images/clear.png</file>
+        <file>images/scope.png</file>
+        <file>images/app.png</file>
+        <file>images/device.png</file>
+        <file>images/device-small.png</file>
+        <file>images/scheme.png</file>
+    </qresource>
+</RCC>
