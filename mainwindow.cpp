@@ -143,24 +143,6 @@ void MainWindow::DrawGrid(QPicture *pi)
     }
     p.end();
 }
-
-double MainWindow::get_V(int code)
-{
-    RuntimeDialog::Settings *st = m_rtsettings->psettings();
-    const double R1A0 = st->R1;
-    const double R2A0 = st->R2;
-    const double Range = 1024.0;
-    const double VRef = 1.1;
-
-    double pixel_per_mark_Y = ((double)(pB - pT)) / nY; // 20 пикселей на одно деление
-    double U_val = (((double)code)/Range)*(VRef*(R1A0+R2A0)/R2A0); // 173(code) ~ 3V
-
-    ui->m_U->setText(tr("%1 V/mark %2 V")
-                     .arg(QString::number(m_V_per_mark[m_V_per_mark_index]))
-                     .arg(QString::number(U_val)));
-    return pixel_per_mark_Y*U_val/m_V_per_mark[m_V_per_mark_index];
-}
-
 bool MainWindow::trimXY(QPoint &pos)
 {
     if (pos.y()<pT+1) pos.setY(pT+1);
@@ -913,19 +895,26 @@ double MainWindow::get_Y_px(double code)
 double MainWindow::get_U_from_code(double code)
 {
     RuntimeDialog::Settings *st = m_rtsettings->psettings();
+    const double R1 = st->R1 + 100; // 100 == Rcable
+    const double R2 = st->R2;
+    const double R3 = st->R3;
     const double Range = 1024.0;
-    const double Uin1 = st->Uin1;
-    const double Uin2 = st->Uin2;
-    double U_val = (((double)code)/Range)*(Uin2 - Uin1) + Uin1;
+    const double Uref = st->Uref;
+    const double U3 = (code/Range)*Uref;
+    const double U_val = (U3*(1+(R3/R1+R3/R2))-Uref*R3/R2)*R1/R3;
+
     return U_val;
 }
-double MainWindow::get_code_from_U(double U)
+double MainWindow::get_code_from_U(double Uin)
 {
     RuntimeDialog::Settings *st = m_rtsettings->psettings();
+    const double R1 = st->R1 + 100; // 100 == Rcable
+    const double R2 = st->R2;
+    const double R3 = st->R3;
     const double Range = 1024.0;
-    const double Uin1 = st->Uin1;
-    const double Uin2 = st->Uin2;
-    double code = (U - Uin1)/ (Uin2 - Uin1)*Range;
+    const double Uref = st->Uref;
+    const double U_val =(Uin*R3/R1+Uref*R3/R2)/(1+R3/R1+R3/R2);
+    const double code = U_val*Range/Uref;
     return code;
 }
 double MainWindow::get_U_from_Y(double Y)

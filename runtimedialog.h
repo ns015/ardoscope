@@ -17,9 +17,9 @@ signals:
 public:
 
     struct Settings {
-        quint32 R1;
-        quint32 R2;
-        quint32 R3;
+        double R1;
+        double R2;
+        double R3;
         double Uref;
         double Uin1;
         double Uin2;
@@ -47,9 +47,9 @@ private:
     Settings m_currentSettings;
    const QString m_settings_file_name = "runtimesettings";
 
-   const quint32 defaultSettings_R1 = 9060;
-   const quint32 defaultSettings_R2 = 1483;
-   const quint32 defaultSettings_R3 = 1484;
+   const double defaultSettings_R1 = 92500;
+   const double defaultSettings_R2 = 8000;
+   const double defaultSettings_R3 = 8380;
    const double defaultSettings_Uref = 2.495;
 };
 

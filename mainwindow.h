@@ -69,7 +69,6 @@ private:
     void DrawResultSelectPen(QPainter *p);
     void draw_gnd(QPainter *p);
     bool trimXY(QPoint &pos);
-    double get_V(int code);
     void showResponse(const QByteArray &data);
     void addcmd(QString cmd);
     QString getcmd(void);
