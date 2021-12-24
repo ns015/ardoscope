@@ -200,19 +200,29 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
             }
         }
         if (obj == ui->m_T) {
-            if (sign_y>0) {
-                if (m_T_per_mark_index < (int) (sizeof(m_T_per_mark)/sizeof(m_T_per_mark[0]) - 1)) {
-                    m_T_per_mark_index++;
+            if (ctrl_flag) {
+                if (sign_y>0) {
+                    if (m_T_per_mark_index < (int) (sizeof(m_T_per_mark)/sizeof(m_T_per_mark[0]) - 1)) {
+                        m_T_per_mark_index++;
+                        update_delay();
+                        update_T();
+                        DrawResult();
+                    }
+                } else {
+                  if (m_T_per_mark_index > 0) {
+                    m_T_per_mark_index--;
                     update_delay();
                     update_T();
                     DrawResult();
+                    }
                 }
             } else {
-              if (m_T_per_mark_index > 0) {
-                m_T_per_mark_index--;
-                update_delay();
-                update_T();
-                DrawResult();
+                if (shift_flag) {
+                    m_offset_val_x += sign_y;
+                    DrawResult();
+                } else {
+                    m_offset_val_x += sign_y * (pB - pT)/ nY;
+                    DrawResult();
                 }
             }
         }

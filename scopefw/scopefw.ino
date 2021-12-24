@@ -1,28 +1,38 @@
 const long boudRate = 115200;
+const long FrLength = 100000;
 
 const int DisplayXRange = 400;
 const char StartCmd = 's';
 const char DelayCmd = 'd';
 const char TriggerCmd = 't';
+const char FrequencyMeasureCmd = 'f';
 
 int Values[DisplayXRange];
 unsigned int CollectingCounter = 0;
 unsigned int Decimation = 1;
 unsigned int DecimationCounter = 0;
 
-enum eTriggerMode { FreeRunning, Positive, Negative};
+#define TriggerModeFreeRunning       0
+#define TriggerModePositive          1
+#define TriggerModeNegative          2
 
-#define ADCModeIdle            0
-#define ADCModeCollecting      1
-#define ADCModeColectionDone   2
-#define ADCModeWaitingTrigger  3
-#define ADCModePreTrigger      4
+#define ADCModeIdle                  0
+#define ADCModeCollecting            1
+#define ADCModeColectionDone         2
+#define ADCModeWaitingTrigger        3
+#define ADCModePreTrigger            4
+#define ADCModeFrequencyMeasure      5
+#define ADCModeFrequencyMeasureBelow 6
+#define ADCModeFrequencyMeasureDone  7
+
 unsigned short int ADCMode = ADCModeIdle;
 
 const int InputDelayRange = 10000;
 int LedState = 0;
-eTriggerMode triggerMode = FreeRunning;
+int triggerMode = TriggerModeFreeRunning;
 int triggerLevel = 0;
+long ADCSamplesCount;
+long ADCChangeCount;
 
 void setup() {
   Serial.begin(boudRate);		// Initialize serial communications with the PC
@@ -38,6 +48,7 @@ void setup() {
 }
 
 void loop() {
+  int i;
   while (Serial.available() > 0) {
     char inByte = Serial.read();
     if (inByte == StartCmd) {
@@ -47,6 +58,18 @@ void loop() {
       ADCMode = ADCModeCollecting;
       sei(); // разрешаем прерывания      
       Serial.print("$");
+    } else if (inByte == FrequencyMeasureCmd) {
+      char incomingBytes[10];
+      memset(incomingBytes, 0, sizeof(incomingBytes));
+      Serial.readBytesUntil(';', incomingBytes, sizeof(incomingBytes) / sizeof(char) - 1);
+      int ibuf = atoi(incomingBytes);
+      cli(); //запрещаем прерывания
+      ADCSamplesCount = 0;
+      ADCChangeCount = 0;
+      triggerLevel = ibuf;
+      ADCMode = ADCModeFrequencyMeasure;
+      sei(); // разрешаем прерывания
+      Serial.print("$f");
     } else if (inByte == DelayCmd) {
       char incomingBytes[10];
       memset(incomingBytes, 0, sizeof(incomingBytes));
@@ -56,11 +79,9 @@ void loop() {
       Serial.print("$d#");
       Serial.print(inputDelay, DEC);
       Serial.println(";:");
-      
       cli(); //запрещаем прерывания
       Decimation = inputDelay;
       sei(); // разрешаем прерывания
-      
     } else if (inByte == TriggerCmd) {
       char incomingBytes[10];
       memset(incomingBytes, 0, sizeof(incomingBytes));
@@ -68,7 +89,7 @@ void loop() {
       if (incomingBytes[0] == '+') {
         long lbuf = atol(&incomingBytes[1]);
         cli(); //запрещаем прерывания        
-        triggerMode = Positive;
+        triggerMode = TriggerModePositive;
         triggerLevel = lbuf;
         DecimationCounter = 0;
         CollectingCounter = 0;
@@ -78,7 +99,7 @@ void loop() {
       } else if (incomingBytes[0] == '-') {
         long lbuf = atol(&incomingBytes[1]);        
         cli(); //запрещаем прерывания        
-        triggerMode = Negative;
+        triggerMode = TriggerModeNegative;
         triggerLevel = lbuf;
         DecimationCounter = 0;
         CollectingCounter = 0;
@@ -86,13 +107,18 @@ void loop() {
         sei(); // разрешаем прерывания
         Serial.print("$t");
       } else {
-        Serial.println("$f#:");
+        Serial.println("$r#:");
       }
     }
   }
-  int i;
-  
-  if (ADCMode == ADCModeColectionDone) { 
+  if (ADCMode == ADCModeFrequencyMeasureDone) {
+        Serial.print("#");
+        Serial.print(ADCChangeCount, DEC);
+        Serial.print(";");        
+        Serial.print(ADCSamplesCount, DEC);
+        Serial.println(":");
+        ADCMode = ADCModeIdle;
+  } else if (ADCMode == ADCModeColectionDone) { 
     Serial.print("s");
     Serial.print("#");
     for (i=0;i<DisplayXRange;i++) {
@@ -105,35 +131,53 @@ void loop() {
 }
 
 /*** Процедура обработки прерывания АЦП ***/
-ISR(ADC_vect) 
+ISR(ADC_vect)
 {
   int analogValue;
   
+  PORTB = (1<<PB5); // пин 13 переводим в состояние HIGH
+  
   analogValue = ADCL; // сохраняем младший байт результата АЦП
   analogValue += ADCH << 8; // сохраняем старший байт АЦП
-  
-  if (LedState == 0) {
-    PORTB = (1<<PB5); // пин 13 переводим в состояние HIGH
-    LedState++;
-  } else if (LedState == 20000) {
-    PORTB = 0; // пин 13 переводим в состояние LOW
-    LedState++;
-  } else if (LedState == 30000) {
-    LedState = 0;
-  } else {
-    LedState++;
+
+  if (ADCMode == ADCModeIdle) {
+    PORTB = 0; // пин 13 переводим в состояние LOW    
+    return;
   }
   
-  if ((ADCMode == ADCModeIdle) || (ADCMode == ADCModeColectionDone)) {
+  if (ADCMode == ADCModeFrequencyMeasure) {
+    if (ADCSamplesCount++ > FrLength) {
+      ADCMode = ADCModeFrequencyMeasureDone;
+      PORTB = 0; // пин 13 переводим в состояние LOW          
+      return;
+    }
+    if (analogValue < triggerLevel) {
+      ADCMode = ADCModeFrequencyMeasureBelow;
+    }
+    PORTB = 0; // пин 13 переводим в состояние LOW              
+    return;
+  }
+
+  if (ADCMode == ADCModeFrequencyMeasureBelow) {
+    if (ADCSamplesCount++ > FrLength) {
+      ADCMode = ADCModeFrequencyMeasureDone;
+      PORTB = 0; // пин 13 переводим в состояние LOW          
+      return;
+    }
+    if (analogValue >= triggerLevel) {
+      ADCMode = ADCModeFrequencyMeasure;
+      ADCChangeCount++;
+    }
+    PORTB = 0; // пин 13 переводим в состояние LOW
     return;
   }
   
   if (ADCMode == ADCModeWaitingTrigger) {
-    if (triggerMode == Positive) {
+    if (triggerMode == TriggerModePositive) {
       if (analogValue <  triggerLevel) {
         ADCMode = ADCModePreTrigger;
       }
-    } else if (triggerMode == Negative) {
+    } else if (triggerMode == TriggerModeNegative) {
       if (analogValue >  triggerLevel) {
         ADCMode = ADCModePreTrigger;        
       }
@@ -141,11 +185,11 @@ ISR(ADC_vect)
   }
   
   if (ADCMode == ADCModePreTrigger) {
-    if (triggerMode == Positive) {
+    if (triggerMode == TriggerModePositive) {
       if (analogValue >=  triggerLevel) {
         ADCMode = ADCModeCollecting;
       }
-    } else if (triggerMode == Negative) {
+    } else if (triggerMode == TriggerModeNegative) {
       if (analogValue <=  triggerLevel) {
         ADCMode = ADCModeCollecting;
       }
@@ -158,6 +202,7 @@ ISR(ADC_vect)
       DecimationCounter = 0;
     }
     if (DecimationCounter != 0) {
+      PORTB = 0; // пин 13 переводим в состояние LOW    
       return;
     }
     
@@ -167,4 +212,5 @@ ISR(ADC_vect)
       ADCMode = ADCModeColectionDone;
     }
   }
+  PORTB = 0; // пин 13 переводим в состояние LOW    
 }
