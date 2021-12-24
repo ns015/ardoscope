@@ -55,10 +55,12 @@ MainWindow::MainWindow(QWidget *parent)
     update_T();
 
     int i;
-    long samples_delay;
-    for(i=0;i<(int)(sizeof(m_T_delay)/sizeof(m_T_delay[0]));i++) {
-        samples_delay = m_T_per_mark[i]*1000*1000/((pR-pL)/nX) - m_T_conversation;
-        m_T_delay[i] = (samples_delay < 0 ? 0 : samples_delay); // usec
+    double step_x1, step_x2;
+    step_x2 = 1/Fsamp;
+
+    for(i=0;i<(int)(sizeof(m_T_per_mark)/sizeof(m_T_per_mark[0]));i++) {
+        step_x1 = m_T_per_mark[i]/((pR-pL)/nX);
+        m_T_decimation[i] = step_x1/step_x2;
     };
     DrawResult();
     /* Создаем объект контекстного меню */
@@ -434,7 +436,7 @@ void MainWindow::initActionsConnections()
 }
 void MainWindow::update_delay()
 {
-    QString cmd = QString("d%1;").arg(m_T_delay[m_T_per_mark_index]);
+    QString cmd = QString("d%1;").arg(m_T_decimation[m_T_per_mark_index]);
     addcmd(cmd);
 
 }
@@ -466,9 +468,8 @@ QString MainWindow::fetchcmd(void)
 void MainWindow::conver_result(QStringList result)
 {
     int i;
-    unsigned long samples_delay = m_T_delay[m_T_per_mark_index] + m_T_conversation; // in usec
     m_result.ts = Line;
-    m_result.step_t = (double)samples_delay / 1e6;
+    m_result.step_t = (m_T_decimation[m_T_per_mark_index]+1)/Fsamp;
     m_result.vector.clear();
     for (i=0;i<result.count();i++) {
         MyPoint mp;
