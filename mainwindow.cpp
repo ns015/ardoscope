@@ -293,7 +293,6 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
             }
             double range_T2 = m_T_per_mark[m_T_per_mark_index]*nX;
             m_offset_val_x = ((pR - pL) - range_T/range_T2*(pR - pL))/2 + pL;
-            qDebug() << "m_offset_val_x" << m_offset_val_x;
             update_T();
             update_V();
             DrawResult();
@@ -346,13 +345,11 @@ void MainWindow::writeData(QString cmd)
     }
     if (!m_que.isEmpty()) {
         QString cmd_from_que = m_que.at(0);
-        qDebug() << "write data"<<cmd_from_que;
         m_op_in_process = true;
         m_op_timer->start(1200);
         m_serial->write(cmd_from_que.toLocal8Bit());
     } else if (cmd.length()>0) {
         m_que.enqueue(cmd);
-        qDebug() << "write data"<<cmd;
         m_op_in_process = true;
         m_op_timer->start(1200);
         m_serial->write(cmd.toLocal8Bit());
@@ -364,11 +361,7 @@ void MainWindow::readData()
 {
     const QByteArray data = m_serial->readAll();
     m_responseData += data;
-
-    qDebug() << QString::fromUtf8(m_responseData);
-
     int ret = checkValidResponse(m_responseData);
-
     if (ret > 0) {
         showResponse(m_responseData);
         m_responseData.remove(0, ret);
@@ -454,7 +447,6 @@ void MainWindow::addcmd(QString cmd)
 {
     m_que_mutex.lock();
     m_que.enqueue(cmd);
-    qDebug()<<cmd;
     m_que_mutex.unlock();
 }
 QString MainWindow::getcmd(void)
@@ -478,14 +470,16 @@ QString MainWindow::fetchcmd(void)
 void MainWindow::conver_result(QStringList result)
 {
     int i;
-    m_result.ts = Line;
+    m_result.ts = Bar;
     m_result.step_t = (m_T_decimation[m_T_per_mark_index]+1)/Fsamp;
     m_result.vector.clear();
-    for (i=2;i<result.count();i++) {
+    for (i=2;i<result.count();i+=2) {
         MyPoint mp;
         memset(&mp, 0, sizeof(mp));
-        QString st = result.at(i);
-        mp.Y = st.toDouble();
+        QString stmax = result.at(i);
+        QString stmin = result.at(i+1);
+        mp.max_y = stmax.toDouble();
+        mp.min_y = stmin.toDouble();
         m_result.vector.append(mp);
     }
     double change_count = result.at(0).toDouble();
