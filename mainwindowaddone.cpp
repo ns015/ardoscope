@@ -42,6 +42,18 @@ void MainWindow::update_T()
     ui->m_T->setText(tr("%1").arg(str_T_per_mark));
 }
 
+void MainWindow::update_Fr()
+{
+    QString str_Fr;
+    if (m_Fr > 1000) {
+        str_Fr = tr("%1(KHz)").arg(QString::number(m_Fr/1000));
+    } else {
+        str_Fr = tr("%1(Hz)").arg(QString::number(m_Fr));
+    };
+    ui->m_Frequency->setText(tr("%1").arg(str_Fr));
+}
+
+
 double MainWindow::getNewOfsetY(int new_index)
 {
     if (m_V_per_mark_index < (int)(sizeof(m_V_per_mark)/sizeof(m_V_per_mark[0]))) {
@@ -157,6 +169,8 @@ void MainWindow::readSettings()
         ui->actionPositive->setChecked(false);
         ui->actionNo_trigger->setChecked(true);
     }
+    m_Fr = settings.value("Fr", 0).toDouble();
+    update_Fr();
 }
 void MainWindow::writeSettings()
 {
@@ -191,4 +205,5 @@ void MainWindow::writeSettings()
 
     settings.setValue("TriggerType", m_trigger.tr_type);
     settings.setValue("TriggerLevel", (int)m_trigger.code);
+    settings.setValue("Fr", m_Fr);
 }

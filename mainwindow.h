@@ -107,6 +107,7 @@ private:
     void conver_result(QStringList result);
     void update_V(void);
     void update_T(void);
+    void update_Fr(void);
 
 private:
     Ui::MainWindow *ui;
@@ -146,6 +147,7 @@ private:
     QByteArray m_responseData;
 
     MyResult m_result;
+    double m_Fr = 0;
 
     QPoint m_cnt_menu_point = QPoint(0, 0);
     QMenu *m_cnt_menu = nullptr;

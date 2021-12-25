@@ -16,6 +16,10 @@ unsigned int DecimationCounter = 0;
 #define TriggerModePositive          1
 #define TriggerModeNegative          2
 
+#define FrequencyMeasureIdle         0
+#define FrequencyMeasure             1
+#define FrequencyMeasureBelow        2
+
 #define ADCModeIdle                  0
 #define ADCModeCollecting            1
 #define ADCModeColectionDone         2
@@ -29,8 +33,9 @@ unsigned short int ADCMode = ADCModeIdle;
 
 const int InputDelayRange = 10000;
 int LedState = 0;
-int triggerMode = TriggerModeFreeRunning;
-int triggerLevel = 0;
+unsigned short int triggerMode = TriggerModeFreeRunning;
+unsigned short int FrMode = FrequencyMeasureIdle;
+int triggerLevel = 512;
 long ADCSamplesCount;
 long ADCChangeCount;
 
@@ -55,32 +60,23 @@ void loop() {
       cli(); //запрещаем прерывания
       DecimationCounter = 0;
       CollectingCounter = 0;
+      ADCSamplesCount = 0;
+      ADCChangeCount = 0;
+      FrMode = FrequencyMeasure;
       ADCMode = ADCModeCollecting;
       sei(); // разрешаем прерывания      
       Serial.print("$");
-    } else if (inByte == FrequencyMeasureCmd) {
+    }else if (inByte == DelayCmd) {
       char incomingBytes[10];
       memset(incomingBytes, 0, sizeof(incomingBytes));
       Serial.readBytesUntil(';', incomingBytes, sizeof(incomingBytes) / sizeof(char) - 1);
-      int ibuf = atoi(incomingBytes);
-      cli(); //запрещаем прерывания
-      ADCSamplesCount = 0;
-      ADCChangeCount = 0;
-      triggerLevel = ibuf;
-      ADCMode = ADCModeFrequencyMeasure;
-      sei(); // разрешаем прерывания
-      Serial.print("$f");
-    } else if (inByte == DelayCmd) {
-      char incomingBytes[10];
-      memset(incomingBytes, 0, sizeof(incomingBytes));
-      Serial.readBytesUntil(';', incomingBytes, sizeof(incomingBytes) / sizeof(char) - 1);
-      long inputDelay = atol(incomingBytes);
-      inputDelay = (inputDelay > 10000 ? 10000 : inputDelay);
+      long inputDecimation = atol(incomingBytes);
+      inputDecimation = (inputDecimation > 10000 ? 10000 : inputDecimation);
       Serial.print("$d#");
-      Serial.print(inputDelay, DEC);
+      Serial.print(inputDecimation, DEC);
       Serial.println(";:");
       cli(); //запрещаем прерывания
-      Decimation = inputDelay;
+      Decimation = inputDecimation;
       sei(); // разрешаем прерывания
     } else if (inByte == TriggerCmd) {
       char incomingBytes[10];
@@ -93,16 +89,22 @@ void loop() {
         triggerLevel = lbuf;
         DecimationCounter = 0;
         CollectingCounter = 0;
+        ADCSamplesCount = 0;
+        ADCChangeCount = 0;
+        FrMode = FrequencyMeasure;        
         ADCMode = ADCModeWaitingTrigger;
         sei(); // разрешаем прерывания        
         Serial.print("$t");
       } else if (incomingBytes[0] == '-') {
         long lbuf = atol(&incomingBytes[1]);        
-        cli(); //запрещаем прерывания        
+        cli(); //запрещаем прерывания
         triggerMode = TriggerModeNegative;
         triggerLevel = lbuf;
         DecimationCounter = 0;
         CollectingCounter = 0;
+        ADCSamplesCount = 0;
+        ADCChangeCount = 0;
+        FrMode = FrequencyMeasure;
         ADCMode = ADCModeWaitingTrigger;
         sei(); // разрешаем прерывания
         Serial.print("$t");
@@ -111,22 +113,21 @@ void loop() {
       }
     }
   }
-  if (ADCMode == ADCModeFrequencyMeasureDone) {
-        Serial.print("#");
-        Serial.print(ADCChangeCount, DEC);
-        Serial.print(";");        
-        Serial.print(ADCSamplesCount, DEC);
-        Serial.println(":");
-        ADCMode = ADCModeIdle;
-  } else if (ADCMode == ADCModeColectionDone) { 
+  if (ADCMode == ADCModeColectionDone) {
+    cli(); //запрещаем прерывания
+    ADCMode = ADCModeIdle;
+    FrMode = FrequencyMeasureIdle;
+    sei(); // разрешаем прерывания    
     Serial.print("s");
     Serial.print("#");
+    Serial.print(ADCChangeCount, DEC);
+    Serial.print(";");
+    Serial.print(ADCSamplesCount, DEC);
     for (i=0;i<DisplayXRange;i++) {
+      Serial.print(";");      
       Serial.print(Values[i], DEC);
-      if (i < DisplayXRange-1) Serial.print(";");
     }
     Serial.println(":");
-    ADCMode = ADCModeIdle;
   }
 }
 
@@ -145,31 +146,18 @@ ISR(ADC_vect)
     return;
   }
   
-  if (ADCMode == ADCModeFrequencyMeasure) {
-    if (ADCSamplesCount++ > FrLength) {
-      ADCMode = ADCModeFrequencyMeasureDone;
-      PORTB = 0; // пин 13 переводим в состояние LOW          
-      return;
-    }
+  if (FrMode == FrequencyMeasure) {
+    ADCSamplesCount++;
     if (analogValue < triggerLevel) {
-      ADCMode = ADCModeFrequencyMeasureBelow;
+      FrMode = FrequencyMeasureBelow;
+      ADCChangeCount++;      
     }
-    PORTB = 0; // пин 13 переводим в состояние LOW              
-    return;
-  }
-
-  if (ADCMode == ADCModeFrequencyMeasureBelow) {
-    if (ADCSamplesCount++ > FrLength) {
-      ADCMode = ADCModeFrequencyMeasureDone;
-      PORTB = 0; // пин 13 переводим в состояние LOW          
-      return;
-    }
+  } else if (FrMode == FrequencyMeasureBelow) {
+    ADCSamplesCount++;
     if (analogValue >= triggerLevel) {
-      ADCMode = ADCModeFrequencyMeasure;
+      FrMode = FrequencyMeasure;
       ADCChangeCount++;
     }
-    PORTB = 0; // пин 13 переводим в состояние LOW
-    return;
   }
   
   if (ADCMode == ADCModeWaitingTrigger) {

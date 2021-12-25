@@ -307,19 +307,19 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
             QString Ubuf;
             double U = get_U_from_Y(m_offset_val_y - y);
             if (fabs(U) < 0.1) {
-                Ubuf = tr("%1 mV").arg(QString::number(U*1000.));
+                Ubuf = tr("%1(mV)").arg(QString::number(U*1000.));
             } else {
-                Ubuf = tr("%1 V").arg(QString::number(U));
+                Ubuf = tr("%1(V)").arg(QString::number(U));
             }
             QString Tbuf;
             double T = get_T_from_X(x - m_offset_val_x);
             double Tabs = fabs(T);
             if ( Tabs < 0.1e-3) {
-                Tbuf = tr("%1 mkSec").arg(QString::number(T*1000.*1000.));
+                Tbuf = tr("%1(mkSec)").arg(QString::number(T*1000.*1000.));
             } else if (Tabs < 0.1e-3) {
-                Tbuf = tr("%1 mSec").arg(QString::number(T*1000.));
+                Tbuf = tr("%1(mSec)").arg(QString::number(T*1000.));
             } else {
-                Tbuf = tr("%1 Sec").arg(QString::number(T));
+                Tbuf = tr("%1(Sec)").arg(QString::number(T));
             }
             QString pos_str;
             pos_str = tr("%1 %2").arg(Ubuf).arg(Tbuf);
@@ -379,7 +379,7 @@ void MainWindow::readData()
 
 void MainWindow::showStatusMessage(const QString &message)
 {
-    m_status->setText(message);
+    m_status->setText(tr("%1").arg(message));
 }
 
 void MainWindow::togleState(bool state_value)
@@ -481,12 +481,17 @@ void MainWindow::conver_result(QStringList result)
     m_result.ts = Line;
     m_result.step_t = (m_T_decimation[m_T_per_mark_index]+1)/Fsamp;
     m_result.vector.clear();
-    for (i=0;i<result.count();i++) {
+    for (i=2;i<result.count();i++) {
         MyPoint mp;
         memset(&mp, 0, sizeof(mp));
         QString st = result.at(i);
         mp.Y = st.toDouble();
         m_result.vector.append(mp);
+    }
+    double change_count = result.at(0).toDouble();
+    double samples_count = result.at(1).toDouble();
+    if (samples_count > 1 ) {
+       m_Fr =  change_count/2/samples_count*Fsamp;
     }
 }
 void MainWindow::showResponse(const QByteArray &data)
@@ -690,6 +695,7 @@ void MainWindow::DrawResult(void)
         print(num);
     }
     ui->m_Display->setPicture(pi);
+    update_Fr();
 }
 void MainWindow::draw_and_check_line(QPainter *p, QPoint from, QPoint to)
 {
