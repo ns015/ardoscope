@@ -6,6 +6,8 @@ TEMPLATE = app
 
 CONFIG += c++11
 
+QMAKE_LFLAGS += -no-pie
+
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
