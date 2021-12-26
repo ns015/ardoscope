@@ -8,6 +8,10 @@ CONFIG += c++11
 
 QMAKE_LFLAGS += -no-pie
 
+unix {
+    LIBS += -lX11
+}
+
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
@@ -27,7 +31,3 @@ FORMS += \
 
 RESOURCES += \
     ardoscope.qrc
-
-unix {
-    LIBS += -lX11
-}

@@ -38,6 +38,7 @@ bool MainWindow::checkCapsLock()
   unsigned n;
   XkbGetIndicatorState(d, XkbUseCoreKbd, &n);
   caps_state = (n & 0x01) == 1;
+  XCloseDisplay(d);
  }
  return caps_state;
 #endif
@@ -51,11 +52,13 @@ bool MainWindow::checkNumLock()
 
 #ifndef Q_OS_WIN32
     bool num_lock_status = false;
-    Display *dpy = XOpenDisplay(":0");
-    XKeyboardState x;
-    XGetKeyboardControl(dpy, &x);
-    XCloseDisplay(dpy);
-    num_lock_status = x.led_mask & 2;
+    Display *dpy = XOpenDisplay((char*)0);
+    if (dpy) {
+        XKeyboardState x;
+        XGetKeyboardControl(dpy, &x);
+        XCloseDisplay(dpy);
+        num_lock_status = x.led_mask & 2;
+    }
     return num_lock_status;
 #endif
 }
