@@ -579,7 +579,7 @@ void MainWindow::draw_gnd(QPainter *p)
     double x, y;
     QPoint from, to;
     double CodeUin0 = m_rtsettings->psettings()->CodeUin0;
-    y = -get_Y_px(CodeUin0) + m_offset_val_y;
+    y = -get_Y_px((int)(CodeUin0 + 0.5)) + m_offset_val_y;
     if (y>pB) { y = pB;} if (y<pT) { y = pT; }
     from = QPoint(pL-10, y);
     to = QPoint(pL, y);

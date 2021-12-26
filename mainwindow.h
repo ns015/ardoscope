@@ -123,6 +123,7 @@ private:
     const double m_T_per_mark[13] = { 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 0.01, 0.02, 0.05, 0.1};
     int m_T_per_mark_index = 0;
     const double Fsamp = 16000000.0/16/13;
+    //const double Fsamp = 16000000.0/128/13;
     unsigned long m_T_decimation[sizeof(m_T_per_mark)/sizeof(m_T_per_mark[0])];
 
     const QString m_settings_file_name = "application";
