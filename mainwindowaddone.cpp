@@ -15,7 +15,50 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <math.h>
+#ifdef Q_OS_WIN32
+# include <windows.h>
+#else
+#  include <X11/XKBlib.h>
+# undef KeyPress
+# undef KeyRelease
+# undef FocusIn
+# undef FocusOut
+// #undef those Xlib #defines that conflict with QEvent::Type enum
+#endif
+bool MainWindow::checkCapsLock()
+{
+ // platform dependent method of determining if CAPS LOCK is on
+#ifdef Q_OS_WIN32 // MS Windows version
+ return GetKeyState(VK_CAPITAL) == 1;
+#else // X11 version (Linux/Unix/Mac OS X/etc...)
+ Display * d = XOpenDisplay((char*)0);
+ bool caps_state = false;
+ if (d)
+ {
+  unsigned n;
+  XkbGetIndicatorState(d, XkbUseCoreKbd, &n);
+  caps_state = (n & 0x01) == 1;
+ }
+ return caps_state;
+#endif
+}
+bool MainWindow::checkNumLock()
+{
+#ifdef _WIN32
+    short status = GetKeyState(VK_NUMLOCK);
+    return status == 1;
+#endif
 
+#ifndef Q_OS_WIN32
+    bool num_lock_status = false;
+    Display *dpy = XOpenDisplay(":0");
+    XKeyboardState x;
+    XGetKeyboardControl(dpy, &x);
+    XCloseDisplay(dpy);
+    num_lock_status = x.led_mask & 2;
+    return num_lock_status;
+#endif
+}
 void MainWindow::update_V(void)
 {
     double val = m_V_per_mark[m_V_per_mark_index];

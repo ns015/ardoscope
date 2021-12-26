@@ -27,3 +27,7 @@ FORMS += \
 
 RESOURCES += \
     ardoscope.qrc
+
+unix {
+    LIBS += -lX11
+}

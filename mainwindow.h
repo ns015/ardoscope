@@ -62,6 +62,8 @@ public:
     bool eventFilter(QObject *obj, QEvent *event);
 
 private:
+    bool checkCapsLock();
+    bool checkNumLock();
     void DrawResult(void);
     void DrawGrid(QPicture *pi);
     void drawLine(QPainter *p, QPoint from, QPoint to);

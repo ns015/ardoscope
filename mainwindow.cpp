@@ -160,15 +160,9 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
     {
         QWheelEvent *mouseEvent = static_cast<QWheelEvent*>(event);
         QPoint numDegrees = mouseEvent->angleDelta() / 8;
-
         bool shift_flag = false;
-        if (QApplication::keyboardModifiers() & Qt::ShiftModifier)
-        {
-            shift_flag = true;
-        }
-
+        shift_flag = checkNumLock();
         int sign_y;
-
         if (numDegrees.y()>0) {
             sign_y = 1;
         } else {
