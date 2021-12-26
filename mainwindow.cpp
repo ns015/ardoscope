@@ -161,12 +161,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
         QWheelEvent *mouseEvent = static_cast<QWheelEvent*>(event);
         QPoint numDegrees = mouseEvent->angleDelta() / 8;
 
-        bool ctrl_flag = false;
         bool shift_flag = false;
-        if (QApplication::keyboardModifiers() & Qt::ControlModifier)
-        {
-            ctrl_flag = true;
-        }
         if (QApplication::keyboardModifiers() & Qt::ShiftModifier)
         {
             shift_flag = true;
@@ -181,26 +176,16 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
         }
 
         if (obj == ui->m_Display) {
-            if (ctrl_flag) {
-                if (shift_flag) {
-                    m_offset_val_x += sign_y;
-                    DrawResult();
-                } else {
-                    m_offset_val_x += sign_y * (pB - pT)/ nY;
-                    DrawResult();
-                }
+            if (shift_flag) {
+                m_offset_val_y += -sign_y;
+                DrawResult();
             } else {
-                if (shift_flag) {
-                    m_offset_val_y += -sign_y;
-                    DrawResult();
-                } else {
-                    m_offset_val_y += -sign_y * (pR - pL)/ nX;
-                    DrawResult();
-                }
+                m_offset_val_y += -sign_y * (pR - pL)/ nX;
+                DrawResult();
             }
         }
         if (obj == ui->m_T) {
-            if (ctrl_flag) {
+            if (!m_control_T_flag) {
                 if (sign_y>0) {
                     if (m_T_per_mark_index < (int) (sizeof(m_T_per_mark)/sizeof(m_T_per_mark[0]) - 1)) {
                         m_T_per_mark_index++;
@@ -283,12 +268,13 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
             m_offset_val_y = get_Y_px(mid_code) + (pB - pT) / 2 + pT;
 
             double range_T = m_result.step_t * m_result.vector.count();
-            double range_T_per_mark = range_T / nX;
-
-            for (i=0;i<(int)(sizeof(m_T_per_mark)/sizeof(m_T_per_mark[0]));i++) {
-                if (m_T_per_mark[i] >= range_T_per_mark) {
-                    m_T_per_mark_index = i;
-                    break;
+            if (!m_control_T_flag) {
+                double range_T_per_mark = range_T / nX;
+                for (i=0;i<(int)(sizeof(m_T_per_mark)/sizeof(m_T_per_mark[0]));i++) {
+                    if (m_T_per_mark[i] >= range_T_per_mark) {
+                        m_T_per_mark_index = i;
+                        break;
+                    }
                 }
             }
             double range_T2 = m_T_per_mark[m_T_per_mark_index]*nX;
@@ -296,6 +282,9 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
             update_T();
             update_V();
             DrawResult();
+        } else if (obj == ui->m_T) {
+            m_control_T_flag = !m_control_T_flag;
+            update_T();
         }
     } else if (event->type() == QEvent::MouseMove)
     {
@@ -347,11 +336,13 @@ void MainWindow::writeData(QString cmd)
         QString cmd_from_que = m_que.at(0);
         m_op_in_process = true;
         m_op_timer->start(1200);
+        qDebug()<<cmd_from_que;
         m_serial->write(cmd_from_que.toLocal8Bit());
     } else if (cmd.length()>0) {
         m_que.enqueue(cmd);
         m_op_in_process = true;
         m_op_timer->start(1200);
+        qDebug()<<cmd;
         m_serial->write(cmd.toLocal8Bit());
     }
     m_que_mutex.unlock();
@@ -486,6 +477,8 @@ void MainWindow::conver_result(QStringList result)
     double samples_count = result.at(1).toDouble();
     if (samples_count > 1 ) {
        m_Fr =  change_count/2/samples_count*Fsamp;
+    } else {
+       m_Fr = 0;
     }
 }
 void MainWindow::showResponse(const QByteArray &data)

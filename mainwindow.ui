@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>574</width>
+    <width>638</width>
     <height>617</height>
    </rect>
   </property>
@@ -126,9 +126,21 @@
           <property name="flat">
            <bool>false</bool>
           </property>
+          <property name="checkable">
+           <bool>false</bool>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
           <layout class="QGridLayout" name="gridLayout">
            <item row="0" column="0">
             <widget class="QLabel" name="m_T">
+             <property name="minimumSize">
+              <size>
+               <width>140</width>
+               <height>0</height>
+              </size>
+             </property>
              <property name="text">
               <string/>
              </property>
@@ -193,7 +205,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>574</width>
+     <width>638</width>
      <height>22</height>
     </rect>
    </property>

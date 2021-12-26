@@ -39,7 +39,11 @@ void MainWindow::update_T()
     } else {
         str_T_per_mark = tr("%1 usec/mark").arg(QString::number(m_T_per_mark[m_T_per_mark_index]*1000.*1000.));
     };
-    ui->m_T->setText(tr("%1").arg(str_T_per_mark));
+    if (m_control_T_flag) {
+        ui->m_T->setText(tr("%1 lock").arg(str_T_per_mark));
+    } else {
+        ui->m_T->setText(tr("%1").arg(str_T_per_mark));
+    }
 }
 
 void MainWindow::update_Fr()

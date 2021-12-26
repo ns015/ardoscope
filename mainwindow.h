@@ -152,5 +152,7 @@ private:
     QPoint m_cnt_menu_point = QPoint(0, 0);
     QMenu *m_cnt_menu = nullptr;
     struct MyTrigger m_trigger;
+
+    bool m_control_T_flag = false;
 };
 #endif // MAINWINDOW_H

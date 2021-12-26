@@ -57,7 +57,7 @@ void InitValues(void)
   ADCChangeCount = 0;
   CollectingCounter = 0;
   DecimationCounter = 0;
-  minimum = 1024;
+  minimum = 1023;
   maximum = 0;
 }
 
@@ -208,7 +208,7 @@ ISR(ADC_vect)
     ValuesMin[CollectingCounter] = minimum;
     
     maximum = 0;
-    minimum = 1024;
+    minimum = 1023;
     
     CollectingCounter++;
     if (CollectingCounter >= sizeof(ValuesMax)/sizeof(ValuesMax[0])) {
