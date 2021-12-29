@@ -73,7 +73,7 @@ void RuntimeDialog::updateSettingsStructure()
     m_currentSettings.Uin2 = I * (Rin + Rcabel) + Uref;
 
     double R = 1 / (1/(Rin+Rcabel) + 1/R2A0);
-    m_currentSettings.CodeUin0 = 1023.*R/(R1A0 + R);
+    m_currentSettings.CodeUin0 = 1024.*R/(R1A0 + R);
 
     ui->U1U2->setText(tr("U1=%1(V), U2=%2(V), CodeU0=%3").arg(QString::number(m_currentSettings.Uin1))
                       .arg(QString::number(m_currentSettings.Uin2))
