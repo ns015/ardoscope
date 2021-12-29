@@ -895,7 +895,7 @@ double MainWindow::get_U_from_code(double code)
     RuntimeDialog::Settings *st = m_rtsettings->psettings();
     double U_val = 0;
     if (st->Uref != 0) {
-        U_val = st->Uin1 + (st->Uin2 - st->Uin1) * code / 1024.;
+        U_val = st->Uin1 + (st->Uin2 - st->Uin1) * code / 1023.;
     }
     return U_val;
 }
@@ -904,7 +904,7 @@ double MainWindow::get_code_from_U(double Uin)
     RuntimeDialog::Settings *st = m_rtsettings->psettings();
     double code = 0;
     if (st->Uin2 - st->Uin1 != 0) {
-        code = (Uin - st->Uin1) * 1024. / (st->Uin2 - st->Uin1);
+        code = (Uin - st->Uin1) * 1023. / (st->Uin2 - st->Uin1);
     }
     return code;
 }
