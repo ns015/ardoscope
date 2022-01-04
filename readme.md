@@ -3,6 +3,11 @@
 
 Осциллограф на основе Arduino
 
+Для компиляции необходим модуль serialport:
+
+    >sudo apt-get install libqt5serialport5-dev
+
+
 Компиляция:
 
     >qmake
